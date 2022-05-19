@@ -1,2 +1,2 @@
 # Pythoon-Notebook
-Learning Notes and Coding Excercises
+Data Science learning notes and coding excercises.
