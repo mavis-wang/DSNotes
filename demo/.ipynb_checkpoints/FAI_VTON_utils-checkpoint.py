@@ -9,7 +9,7 @@ import torch
 import shutil
 import numpy as np
 import pandas as pd
-# from torch_snippets import *
+from torch_snippets import *
 
 import torchvision.io
 from IPython.core.display import Video
@@ -86,33 +86,6 @@ def getKPVideo(videoPath, start_time, end_time):
     return (processed_Video, kpvideo)
 
 
-""" SCHP
-"""
-def humanParse(filePath = '../lib/humanParsing/parse.py', dataset = 'pascal', model = '../lib/humanParsing/model_Schp_pascal.pth', inputDIR = '../data/processed/image', outputDIR = '../lib/humanParsing/pascal'):
-    
-    pascalDIR = humanParsingDIR + 'pascal'
-    lipDIR = humanParsingDIR + 'lip'
-    
-    if not os.path.exists(pascalDIR):
-        os.mkdir(pascalDIR)
-    
-    if not os.path.exists(lipDIR):
-        os.mkdir(lipDIR)
-
-    # pascal
-    subprocess.run(['python3', filePath, 
-                    '--dataset', dataset, 
-                    '--model-restore', model, 
-                    '--input-dir', inputDIR, 
-                    '--output-dir', outputDIR])
-    # # lip
-    # subprocess.run(['python3', filePath, 
-    #                 '--dataset', 'lip', 
-    #                 '--model-restore', '../lib/humanParsing/model_Schp_lip.pth', 
-    #                 '--input-dir', inputDIR, 
-    #                 '--output-dir', outputDIR])
-    
-    
 def getImageParse():         
     
     # from
@@ -161,37 +134,6 @@ def getImageMask(img_frames_DIR, parsed_img_DIR, image_mask_DIR):
             cv.imwrite(imPath, mask)
     
     return image_mask_DIR
-
-
-def getImageParseNew(parsed_img_DIR ,img_parse_new_DIR):
-    if not os.path.exists(img_parse_new_DIR):
-        shutil.copytree(parsed_img_DIR, img_parse_new_DIR)
-    else:
-        shutil.rmtree(img_parse_new_DIR)
-        shutil.copytree(parsed_img_DIR, img_parse_new_DIR)
-        
-    img_parse_new = list(np.sort(os.listdir(img_parse_new_DIR)))
-    
-    for im in img_parse_new:
-        imPath = os.path.join(img_parse_new_DIR, im)
-        
-        if imPath.endswith('.png'):
-            img = cv.imread(imPath,cv.IMREAD_GRAYSCALE)
-            for i, v in np.ndenumerate(img):
-                if v == 76:  #. hair
-                    img[i[0]][i[1]] = 2
-                elif v == 29:  #. head
-                    img[i[0]][i[1]] = 13
-                elif v == 140 or v == 178:  #. arms
-                    img[i[0]][i[1]] = 14
-                elif v == 126:
-                    img[i[0]][i[1]] = 5
-                elif v == 59 or v == 210:   #. legs
-                    img[i[0]][i[1]] = 16
-                elif v == 156:
-                    img[i[0]][i[1]] = 20
-                    
-            cv.imwrite(imPath, img)
 
 
 def processCloth(raw_cloth_DIR, cloth_DIR, cloth_mask_DIR):
@@ -263,31 +205,6 @@ def randomTestPairsTxt(img_frames_DIR, cloth_DIR):
     test_pairs_df.to_csv(cpVtonPlusDIR +'data/testPairs.txt', header=None, index=None, sep=' ', mode='w')
        
     return test_pairs_df
-    
-def testPairsTxt(clothID, img_frames_DIR, cloth_DIR): 
-    
-    idx = clothID
-
-    images = np.sort(os.listdir(img_frames_DIR))
-    images = [img for img in images if img.endswith('.jpg')]
-
-    clothes = np.sort(os.listdir(cloth_DIR))
-    clothes = [c for c in clothes if c.endswith('.jpg')]
-
-    if not os.path.exists(input_cloth_DIR):
-        os.mkdir(input_cloth_DIR)
-
-    # make same length as frames 
-    cloth_list = [clothes[idx]]*len(images)
-
-    test_pairs_df = pd.DataFrame(images)
-    test_pairs_df['2'] = cloth_list
-
-    # save
-    test_pairs_df.to_csv(input_DIR +'testPairs.txt', header=None, index=None, sep=' ', mode='w')
-    test_pairs_df.to_csv(cpVtonPlusDIR +'data/testPairs.txt', header=None, index=None, sep=' ', mode='w')
-            
-    return test_pairs_df
 
 
 def tryOnInputGen(cpVtonPlusDIR):
@@ -346,20 +263,7 @@ def tryOnInputGen(cpVtonPlusDIR):
         
 
 """ CP-VTON-PLUS
-"""
-    
-# transfer GMM outputs to TOM inputs
-def moveGMMoutput(src_warp_cloth, src_warp_mask, dest_warp_cloth, dest_warp_mask):
-
-    if os.path.exists(dest_warp_cloth):
-        shutil.rmtree(dest_warp_cloth)
-    if os.path.exists(dest_warp_mask):
-        shutil.rmtree(dest_warp_mask)
-
-    shutil.copytree(src_warp_cloth, dest_warp_cloth)
-    shutil.copytree(src_warp_mask, dest_warp_mask)
-
-
+""" 
 def getTryOnVideo(out_tryOn_DIR, clothID=0):
     
     if not os.path.exists(out_tryOnimg_frames_DIR):
@@ -400,26 +304,3 @@ def showColabVideo(file_name, width=384, height=512):
     return HTML(data='''<video width="{0}" height="{1}" alt="test" controls>
                         <source src="data:video/mp4;base64,{2}" type="video/mp4" />
                       </video>'''.format(width, height, video_encoded.decode('ascii')))
-
-
-def framesToVideo(frames_DIR, outVideoPath):
-    import os, numpy as np
-    outfile = outVideoPath
-    
-    frames = []
-    for filename in os.listdir(frames_DIR):
-        if filename.endswith('.png'):
-            f = os.path.join(frames_DIR, filename)
-            frames.append(f)
-    
-    print(f'frames count: {len(frames)}')
-    
-    # sort by filenames
-    frames = list(np.sort(frames))
-    clip = ImageSequenceClip(frames, fps=28) 
-    
-    clip.write_videofile(outfile)
-    
-    out_tryOnVideo = outfile
-    
-    return out_tryOnVideo
